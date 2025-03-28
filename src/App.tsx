@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import Game from "./components/Game";
 import { useStore } from "./store";
@@ -16,6 +16,14 @@ function App() {
   const bulletCount = useStore((state) => state.bulletCount);
   const bulletRegenCooldown = useStore((state) => state.bulletRegenCooldown);
   const [muted, setMuted] = useState(false);
+  const isTouchDevice = useRef(false);
+  const [controlsCollapsed, setControlsCollapsed] = useState(false);
+
+  // Detect touch device
+  useEffect(() => {
+    isTouchDevice.current = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    document.documentElement.classList.toggle("touch-device", isTouchDevice.current);
+  }, []);
 
   // Add function to toggle sound
   const toggleSound = () => {
@@ -23,14 +31,22 @@ function App() {
     setMuted(newMutedState);
   };
 
+  // Toggle controls panel
+  const toggleControls = () => {
+    setControlsCollapsed(!controlsCollapsed);
+  };
+
   // Function to hide cursor during gameplay
   const updateCursorVisibility = useCallback(() => {
-    if (isGameOver) {
-      // Show cursor when game is over
-      document.body.style.cursor = "auto";
-    } else {
-      // Hide cursor during gameplay
-      document.body.style.cursor = "none";
+    // Only hide cursor on non-touch devices
+    if (!isTouchDevice.current) {
+      if (isGameOver) {
+        // Show cursor when game is over
+        document.body.style.cursor = "auto";
+      } else {
+        // Hide cursor during gameplay
+        document.body.style.cursor = "none";
+      }
     }
   }, [isGameOver]);
 
@@ -39,14 +55,14 @@ function App() {
     updateCursorVisibility();
   }, [isGameOver, updateCursorVisibility]);
 
-  // Show cursor when hovering over UI elements
+  // Show cursor when hovering over UI elements (non-touch only)
   const showCursor = () => {
-    if (!isGameOver) document.body.style.cursor = "pointer";
+    if (!isGameOver && !isTouchDevice.current) document.body.style.cursor = "pointer";
   };
 
-  // Hide cursor when leaving UI elements
+  // Hide cursor when leaving UI elements (non-touch only)
   const hideCursor = () => {
-    if (!isGameOver) document.body.style.cursor = "none";
+    if (!isGameOver && !isTouchDevice.current) document.body.style.cursor = "none";
   };
 
   // Handle keyboard controls including M for mute
@@ -82,7 +98,7 @@ function App() {
         <button
           className="sound-toggle"
           onClick={toggleSound}
-          title="Press M to toggle sound"
+          title={isTouchDevice.current ? "Tap to toggle sound" : "Press M to toggle sound"}
           onMouseEnter={showCursor}
           onMouseLeave={hideCursor}>
           {muted ? "🔇" : "🔊"}
@@ -96,9 +112,13 @@ function App() {
         {bulletCount === 0 && bulletRegenCooldown > 0 && (
           <div className="ammo-status" onMouseEnter={showCursor} onMouseLeave={hideCursor}>
             <span>Auto-reloading: {Math.ceil(bulletRegenCooldown)}s</span>
-            <span className="auto-reload-hint">
-              (Keep holding F or Enter to auto-fire when ready)
-            </span>
+            {!isTouchDevice.current ? (
+              <span className="auto-reload-hint">
+                (Keep holding F or Enter to auto-fire when ready)
+              </span>
+            ) : (
+              <span className="auto-reload-hint">(Swipe up to shoot when bullets reload)</span>
+            )}
           </div>
         )}
 
@@ -107,19 +127,48 @@ function App() {
         </div>
 
         <div
-          className="controls-info left-panel"
+          className={`controls-info left-panel ${controlsCollapsed ? "collapsed" : ""}`}
           onMouseEnter={showCursor}
           onMouseLeave={hideCursor}>
+          <button
+            className="controls-toggle"
+            onClick={toggleControls}
+            title={controlsCollapsed ? "Expand" : "Collapse"}
+            onMouseEnter={showCursor}
+            onMouseLeave={hideCursor}>
+            ▼
+          </button>
           <h3>How to Play</h3>
-          <p>W/A/S/D or Arrow Keys: Move</p>
-          <p>Space: Jump over obstacles</p>
-          <p>F or Enter: Shoot forward</p>
-          <p>M: Toggle sound on/off</p>
-          <p>You have {maxBullets} bullets</p>
-          <p>Bullets auto-reload after 10s when empty</p>
-          <p>Level up every 10 points!</p>
-          <p>Avoid red cubes to survive!</p>
-          {isGameOver && <p className="restart-tip">Press Enter to restart</p>}
+
+          <div className="controls-content">
+            {isTouchDevice.current ? (
+              // Touch controls instructions
+              <>
+                <p>Touch & drag: Move ball</p>
+                <p>Single tap: Jump</p>
+                <p>Swipe up: Shoot</p>
+                <p>Tap sound icon: Toggle sound</p>
+              </>
+            ) : (
+              // Keyboard controls instructions
+              <>
+                <p>W/A/S/D or Arrow Keys: Move</p>
+                <p>Space: Jump over obstacles</p>
+                <p>F or Enter: Shoot forward</p>
+                <p>M: Toggle sound on/off</p>
+              </>
+            )}
+
+            <p>You have {maxBullets} bullets</p>
+            <p>Bullets auto-reload after 10s when empty</p>
+            <p>Level up every 10 points!</p>
+            <p>Avoid red cubes to survive!</p>
+            {isGameOver && (
+              <p className="restart-tip">
+                {isTouchDevice.current ? "Tap Play Again" : "Press Enter to restart"}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -128,7 +177,7 @@ function App() {
           <h2>Game Over!</h2>
           <p>Your score: {score}</p>
           <button onClick={restart}>Play Again</button>
-          <p className="restart-tip">Or press Enter key</p>
+          {!isTouchDevice.current && <p className="restart-tip">Or press Enter key</p>}
         </div>
       )}
 

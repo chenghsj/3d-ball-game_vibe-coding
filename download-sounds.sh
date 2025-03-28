@@ -27,5 +27,8 @@ curl -L "https://github.com/scottschiller/SoundManager2/raw/master/demo/mp3/swit
 # Hit sound
 curl -L "https://github.com/scottschiller/SoundManager2/raw/master/demo/mp3/button-10.mp3" -o public/sounds/hit.mp3
 
+# Empty gun sound
+curl -L "https://github.com/scottschiller/SoundManager2/raw/master/demo/mp3/click-low.mp3" -o public/sounds/empty.mp3
+
 echo "All sound files downloaded to public/sounds/"
 echo "Make sure to review and potentially replace these placeholder sounds with your own."

@@ -4,6 +4,7 @@ import { useStore } from "../store";
 import * as THREE from "three";
 import { Vector3 } from "three";
 import { soundManager } from "../utils/SoundManager";
+import TouchControls from "./TouchControls";
 
 // Helper function to merge refs - add this before the component definition
 function useMergedRef<T>(...refs: (React.Ref<T> | null | undefined)[]) {
@@ -39,11 +40,17 @@ const Player = forwardRef<THREE.Mesh, {}>((_, ref) => {
   const lastBulletCountRef = useRef(bulletCount);
   const fKeyPressed = useRef(false);
   const lastShootDirectionRef = useRef(new Vector3(0, 0, -1));
+  const isTouchDevice = useRef(false);
 
   // Create a local ref for internal use to avoid TypeScript errors
   const localRef = useRef<THREE.Mesh>(null);
   // Use merged ref to handle both the forwarded ref and local ref
   const meshRef = useMergedRef(ref, localRef);
+
+  // Check if this is a touch device
+  useEffect(() => {
+    isTouchDevice.current = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -88,13 +95,8 @@ const Player = forwardRef<THREE.Mesh, {}>((_, ref) => {
 
         // Space for jumping
         case " ":
-          // Only allow jumping when on or near ground and not already jumping
-          if (!isJumping.current && localRef.current && localRef.current.position.y <= 0.51) {
-            isJumping.current = true;
-            jumpTime.current = 0;
-            soundManager.play("jump", 0.05);
-            e.preventDefault(); // Prevent space from affecting other controls
-          }
+          handleJump();
+          e.preventDefault(); // Prevent space from affecting other controls
           break;
 
         // F or Enter key for shooting forward (negative Z direction)
@@ -134,8 +136,11 @@ const Player = forwardRef<THREE.Mesh, {}>((_, ref) => {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    // Only add keyboard controls if not on a touch device
+    if (!isTouchDevice.current) {
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+    }
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -143,8 +148,30 @@ const Player = forwardRef<THREE.Mesh, {}>((_, ref) => {
     };
   }, [isGameOver, addBullet]);
 
+  // Function to handle jumping
+  const handleJump = () => {
+    // Only allow jumping when on or near ground and not already jumping
+    if (!isJumping.current && localRef.current && localRef.current.position.y <= 0.51) {
+      isJumping.current = true;
+      jumpTime.current = 0;
+      soundManager.play("jump", 0.05);
+    }
+  };
+
+  // Function to handle movement from touch controls
+  const handleTouchMove = (x: number, z: number) => {
+    velocity.current.x = x;
+    velocity.current.z = z;
+
+    // Update movement direction based on touch input
+    if (Math.abs(x) > 0.05 || Math.abs(z) > 0.05) {
+      movementDirection.current.set(x !== 0 ? Math.sign(x) : 0, 0, z !== 0 ? Math.sign(z) : 0);
+    }
+  };
+
   // Helper function to shoot bullets in the specified direction
   const shootBullet = (direction: Vector3) => {
+    console.log("shooting", shootCooldown.current, bulletRegenCooldown);
     if (shootCooldown.current <= 0 && localRef.current && bulletCount > 0) {
       // Play shoot sound
       soundManager.play("shoot", 0.2);
@@ -228,18 +255,29 @@ const Player = forwardRef<THREE.Mesh, {}>((_, ref) => {
   });
 
   return (
-    <mesh ref={meshRef} position={[0, groundLevel, 0]}>
-      <sphereGeometry args={[0.5, 32, 32]} />
-      <meshStandardMaterial
-        color="#ff44aa" // Original bright pink color
-        emissive="#ff0088" // Original emission color
-        emissiveIntensity={0.5} // Original emission intensity
-        metalness={0} // No metalness/reflection
-        roughness={1} // Maximum roughness for matte appearance
-      />
-      {/* Add a point light to make player glow */}
-      <pointLight color="#ff88bb" intensity={1.0} distance={2} decay={2} />
-    </mesh>
+    <>
+      <mesh ref={meshRef} position={[0, groundLevel, 0]}>
+        <sphereGeometry args={[0.5, 32, 32]} />
+        <meshStandardMaterial
+          color="#ff44aa" // Original bright pink color
+          emissive="#ff0088" // Original emission color
+          emissiveIntensity={0.5} // Original emission intensity
+          metalness={0} // No metalness/reflection
+          roughness={1} // Maximum roughness for matte appearance
+        />
+        {/* Add a point light to make player glow */}
+        <pointLight color="#ff88bb" intensity={1.0} distance={2} decay={2} />
+      </mesh>
+
+      {/* Add Touch Controls */}
+      {isTouchDevice.current && (
+        <TouchControls
+          onMove={handleTouchMove}
+          onJump={handleJump}
+          onShoot={() => shootBullet(new Vector3(0, 0, -1))}
+        />
+      )}
+    </>
   );
 });
 

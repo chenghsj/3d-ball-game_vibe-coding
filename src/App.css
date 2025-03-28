@@ -63,6 +63,10 @@ html,
   align-items: center;
   /* Background gradient */
   background: radial-gradient(circle at center, #000066 0%, #000033 100%);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Remove the pseudo-element since we're applying the gradient directly */
@@ -125,6 +129,10 @@ canvas {
   max-width: 80vw;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   z-index: 100;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 .game-over h2 {
@@ -172,6 +180,53 @@ button:hover {
   padding: 12px;
   border-radius: 5px;
   pointer-events: none;
+  transition: height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.controls-info.collapsed {
+  height: 40px !important;
+  opacity: 0.7;
+  transform: translateX(-8px);
+}
+
+.controls-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #4dff4d;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px;
+  margin: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  z-index: 10;
+}
+
+.controls-toggle:hover {
+  transform: scale(1.2);
+  background: none;
+}
+
+.controls-info.collapsed .controls-toggle {
+  transform: rotate(180deg);
+}
+
+.controls-content {
+  padding-right: 30px;
+  transition: opacity 0.3s ease;
+}
+
+.controls-info.collapsed .controls-content {
+  opacity: 0;
 }
 
 .controls-info h3 {
@@ -371,4 +426,216 @@ button:hover {
 /* Make sure sound-notice is always clickable */
 .sound-notice {
   cursor: pointer;
+}
+
+/* Add touch-specific classes */
+.touch-device .controls-info {
+  font-size: 12px;
+}
+
+.touch-device .left-panel {
+  top: 25px;
+  padding: 10px;
+  width: 200px;
+}
+
+.touch-device .bullet-counter {
+  top: 50px;
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+.touch-device h1 {
+  font-size: 24px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.touch-device .sound-toggle {
+  width: 36px;
+  height: 36px;
+}
+
+/* Add touch indicator for mobile */
+.touch-feedback {
+  position: fixed;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  animation: touchPulse 0.6s infinite alternate;
+  display: none;
+}
+
+.touch-device .touch-feedback.active {
+  display: block;
+}
+
+@keyframes touchPulse {
+  from {
+    opacity: 0.3;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  to {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+/* Add control hints for first-time mobile users */
+.mobile-control-hints {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 20px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.mobile-control-hints.visible {
+  opacity: 0.9;
+}
+
+.mobile-control-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  width: 80px;
+}
+
+.mobile-control-hint-icon {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+/* Add touch instruction overlay for first-time users */
+.touch-instructions {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 1000;
+  color: white;
+  text-align: center;
+  max-width: 80%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.touch-instructions h3 {
+  margin-top: 0;
+  color: #4dff4d;
+}
+
+.touch-instructions p {
+  margin: 8px 0;
+}
+
+.touch-instructions button {
+  margin-top: 15px;
+  background-color: #4caf50;
+  border: none;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+}
+
+/* Add swipe indicator animation */
+@keyframes swipeUp {
+  0% {
+    transform: translateY(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-20px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+}
+
+.swipe-indicator {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  animation: swipeUp 1.5s infinite;
+  z-index: 100;
+}
+
+/* Prevent pull-to-refresh on mobile */
+html,
+body {
+  overscroll-behavior-y: contain;
+  touch-action: none;
+}
+
+/* Ensure game is playable on mobile in portrait mode */
+@media (max-width: 768px) {
+  .score-container {
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .score,
+  .level {
+    font-size: 16px;
+    min-width: 120px;
+    padding: 3px 10px;
+  }
+
+  .left-panel {
+    width: 180px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .touch-device .game-over {
+    width: 260px;
+    padding: 20px;
+  }
+
+  .touch-device .game-over h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+  .touch-device .game-over button {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+
+  .controls-info {
+    max-width: 200px;
+  }
+
+  .controls-info.collapsed {
+    max-width: 120px;
+    transform: translateX(-15px);
+  }
 }

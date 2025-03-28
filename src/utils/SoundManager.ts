@@ -52,6 +52,7 @@ class SoundManager {
       levelUp: `${this.baseUrl}sounds/level-up.mp3`,
       bulletReload: `${this.baseUrl}sounds/reload.mp3`,
       hit: `${this.baseUrl}sounds/hit.mp3`,
+      empty: `${this.baseUrl}sounds/empty.mp3`, // Add new empty-gun sound
     };
 
     // Create audio elements for fallback
